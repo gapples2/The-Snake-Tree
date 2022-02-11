@@ -59,6 +59,7 @@ addLayer("s", {
       "main-display",
       ["display-text",function(){return `Score: ${player.s.score}<br>Best Score: ${player.s.bestScore}`}],
       "blank",
+      ["display-text","Use WASD or the arrow keys to turn the snake!<br>Eating apples will increase your score.<br>Going into a wall or a part of your snake will end the game and give you snake points based on your score."],
       "grid",
       "blank",
       "buyables"
