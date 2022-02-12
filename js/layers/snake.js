@@ -21,6 +21,98 @@ function addFruit(){
   if(b[applePos[0]][applePos[1]]!=0)console.log(JSON.parse(JSON.stringify(b)),pb,r,t)
   b[applePos[0]][applePos[1]]=2
 }
+function tick(){
+  if(player.s.firstLoad){
+        player.s.firstLoad=false
+        addFruit()
+      }
+  player.s.currentTime=0
+      if(!player.s.died){
+        let pos = [0,0]
+        if((player.s.lastDi+2)%4==player.s.di)player.s.di=player.s.lastDi
+        switch(player.s.di){
+          case 0:
+            pos[0]=-1
+            break;
+          case 1:
+            pos[1]=-1
+            break;
+          case 2:
+            pos[0]=1
+            break;
+          case 3:
+            pos[1]=1
+            break;
+        }
+        let s = player.s.snake
+        let cp = s[s.length-1]
+        let b = player.s.board
+        let bpos = b[cp[0]+pos[0]]||[0,0]
+        bpos=bpos[cp[1]+pos[1]]
+        if(bpos==undefined)bpos=1
+        if(
+          (cp[0]+pos[0]>8 || cp[0]+pos[0]<0 ||
+          cp[1]+pos[1]>8 || cp[1]+pos[1]<0 ||
+          bpos==1) && !(bpos==1&&(cp[0]+pos[0])==s[0][0]&&(cp[1]+pos[1])==s[0][1])
+        ){
+          player.s.died=true
+          return;
+        }
+        player.s.lastDi=player.s.di
+        let newPos = [cp[0]+pos[0],cp[1]+pos[1]]
+        let ateApple = false
+        if(b[newPos[0]][newPos[1]]==2){
+          addFruit()
+          ateApple=true
+          player.s.score=player.s.score.add(tmp.s.buyables[12].effect)
+          player.s.bestScore=player.s.bestScore.max(player.s.score)
+        }
+        if(!ateApple){
+          b[s[0][0]][s[0][1]]=0
+          player.s.snake=player.s.snake.slice(1)
+        }
+        b[newPos[0]][newPos[1]]=1
+        player.s.snake.push(newPos)
+      }
+      else{
+        let newBoard = []
+        for(let x=0;x<9;x++){
+          newBoard[x]=[]
+          for(let y=0;y<9;y++)newBoard[x][y]=0
+        }
+        newBoard[4][4]=1
+        player.s.board = newBoard
+        player.s.died=false
+        player.s.snake=[[4,4]]
+        let b = player.s.board
+        let pb = {}
+        let maxFruits = 0
+        for(let x=0;x<9;x++){
+          let k = []
+          for(let y=0;y<9;y++){
+            if(b[x][y]==0){
+              k.push(y)
+              maxFruits++
+            }
+          }
+          if(k.length>0)pb[x]=k
+        }
+        let fruitAmt = tmp.s.buyables[11].effect.min(maxFruits)
+        let k = Object.keys(pb)
+        for(let x=0;x<fruitAmt.toNumber();x++){
+          let r = Math.floor(Math.random()*k.length)
+          let t = Math.floor(Math.random()*pb[k[r]].length)
+          b[k[r]][pb[k[r]][t]]=2
+          pb[r].splice(t,1)
+          if(pb[r].length==0){
+            delete pb[r]
+            k=Object.keys(pb)
+          }
+        }
+        player.s.points=player.s.points.add(player.s.score.times(tmp.s.buyables[13].effect))
+        player.s.score=new Decimal(0)
+      }
+}
 addLayer("s", {
     name: "snake", // This is optional, only used in a few places, If absent it just uses the layer id.
     symbol: "S", // This appears on the layer's node. Default is the id with the first letter capitalized
@@ -61,6 +153,7 @@ addLayer("s", {
       "blank",
       ["display-text","Use WASD or the arrow keys to turn the snake!<br>Eating apples will increase your score.<br>Going into a wall or a part of your snake will end the game and give you snake points based on your score."],
       "grid",
+      "clickables",
       "blank",
       "buyables"
     ],
@@ -88,102 +181,12 @@ addLayer("s", {
         },
     },
     update(diff){
-      if(player.s.firstLoad){
-        player.s.firstLoad=false
-        addFruit()
-      }
       if(player.tab=="s")player.s.currentTime+=diff
-      if(player.s.currentTime>=0.25&&!player.s.died){
-        player.s.currentTime=0
-        let pos = [0,0]
-        if((player.s.lastDi+2)%4==player.s.di)player.s.di=player.s.lastDi
-        switch(player.s.di){
-          case 0:
-            pos[0]=-1
-            break;
-          case 1:
-            pos[1]=-1
-            break;
-          case 2:
-            pos[0]=1
-            break;
-          case 3:
-            pos[1]=1
-            break;
-        }
-        let s = player.s.snake
-        let cp = s[s.length-1]
-        let b = player.s.board
-        let bpos = b[cp[0]+pos[0]]||[0,0]
-        bpos=bpos[cp[1]+pos[1]]
-        if(bpos==undefined)bpos=1
-        console.log()
-        if(
-          (cp[0]+pos[0]>8 || cp[0]+pos[0]<0 ||
-          cp[1]+pos[1]>8 || cp[1]+pos[1]<0 ||
-          bpos==1) && !(bpos==1&&(cp[0]+pos[0])==s[0][0]&&(cp[1]+pos[1])==s[0][1])
-        ){
-          player.s.died=true
-          return;
-        }
-        player.s.lastDi=player.s.di
-        let newPos = [cp[0]+pos[0],cp[1]+pos[1]]
-        let ateApple = false
-        if(b[newPos[0]][newPos[1]]==2){
-          addFruit()
-          ateApple=true
-          player.s.score=player.s.score.add(tmp.s.buyables[12].effect)
-          player.s.bestScore=player.s.bestScore.max(player.s.score)
-        }
-        if(!ateApple){
-          b[s[0][0]][s[0][1]]=0
-          player.s.snake=player.s.snake.slice(1)
-        }
-        b[newPos[0]][newPos[1]]=1
-        player.s.snake.push(newPos)
-      }
-      if(player.s.currentTime>=1&&player.s.died){
-        player.s.currentTime=0
-        let newBoard = []
-        for(let x=0;x<9;x++){
-          newBoard[x]=[]
-          for(let y=0;y<9;y++)newBoard[x][y]=0
-        }
-        newBoard[4][4]=1
-        player.s.board = newBoard
-        player.s.died=false
-        player.s.snake=[[4,4]]
-        let b = player.s.board
-        let pb = {}
-        let maxFruits = 0
-        for(let x=0;x<9;x++){
-          let k = []
-          for(let y=0;y<9;y++){
-            if(b[x][y]==0){
-              k.push(y)
-              maxFruits++
-            }
-          }
-          if(k.length>0)pb[x]=k
-        }
-        let fruitAmt = tmp.s.buyables[11].effect.min(maxFruits)
-        let k = Object.keys(pb)
-        for(let x=0;x<fruitAmt.toNumber();x++){
-          let r = Math.floor(Math.random()*k.length)
-          let t = Math.floor(Math.random()*pb[k[r]].length)
-          b[k[r]][pb[k[r]][t]]=2
-          pb[r].splice(t,1)
-          if(pb[r].length==0){
-            delete pb[r]
-            k=Object.keys(pb)
-          }
-        }
-        player.s.points=player.s.points.add(player.s.score.times(tmp.s.buyables[13].effect))
-        player.s.score=new Decimal(0)
-      }
+      if(player.s.currentTime>=0.25&&!player.s.died||player.s.currentTime>=1&&player.s.died)tick()
     },
     componentStyles:{
-      gridable:{borderRadius:"0px",width:"50px",height:"50px",transition:"0s"}
+      gridable:{borderRadius:"0px",width:"50px",height:"50px",transition:"0s"},
+      clickable:{width:"50px",minHeight:"50px"}
     },
   buyables: {
     11: {
@@ -226,25 +229,79 @@ addLayer("s", {
           return player.s.bestScore.pow(0.2).pow(x)
         }
     },
-}
+  },
+  clickables: {
+        11: {
+            display:"<h1>^</h1>",
+            canClick:true,
+            onClick(){
+              if(player.s.di%2){
+                player.s.di=0
+                tick()
+              }
+            },
+        },
+        21: {
+            display:"<h1>&lt;</h1>",
+            canClick:true,
+            onClick(){
+              if((player.s.di+1)%2){
+                player.s.di=1
+                tick()
+              }
+            }
+        },
+        22: {
+            display:"<h1>v</h1>",
+            canClick:true,
+            onClick(){
+              if(player.s.di%2){
+                player.s.di=2
+                tick()
+              }
+            }
+        },
+        23: {
+            display:"<h1>&gt;</h1>",
+            canClick:true,
+            onClick(){
+              if((player.s.di+1)%2){
+                player.s.di=3
+                tick()
+              }
+            }
+        }
+    }
 })
 document.addEventListener("keydown",(key)=>{
   switch(key.key){
     case "w":
     case "ArrowUp":
-      if(player.s.di!=2)player.s.di=0
+      if(player.s.di%2){
+        player.s.di=0
+        tick()
+      }
       break;
     case "a":
     case "ArrowLeft":
-      if(player.s.di!=3)player.s.di=1
+      if((player.s.di+1)%2){
+        player.s.di=1
+        tick()
+      }
       break;
     case "s":
     case "ArrowDown":
-      if(player.s.di!=0)player.s.di=2
+      if(player.s.di%2){
+        player.s.di=2
+        tick()
+      }
       break;
     case "d":
     case "ArrowRight":
-      if(player.s.di!=1)player.s.di=3
+      if((player.s.di+1)%2){
+        player.s.di=3
+        tick()
+      }
       break;
   }
 })
